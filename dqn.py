@@ -49,6 +49,8 @@ class DQN:
         self.train = self.build_train(num_actions, optimize_scope)
         self.process_frame = self.build_process_frame(input_height, input_width)
 
+        self.summary = tf.summary.merge(self.summary)
+
         tf.logging.info("Built DQN graph")
 
     def build_q_network(self, X, num_actions, scope):
@@ -166,7 +168,7 @@ class DQN:
             q_vals * tf.one_hot(self.actions, num_actions), axis=1
         )
         self.summary.append(
-            tf.contrib.summary.scalar("train/average_q", tf.reduce_mean(q_selected))
+            tf.summary.scalar("train/average_q", tf.reduce_mean(q_selected))
         )
 
         # Compute r + \gamma max_a(Q(s', a))
@@ -182,7 +184,7 @@ class DQN:
             td_errors, "TD error tensor is NOT finite"
         )
         self.summary.append(
-            tf.contrib.summary.scalar("train/td_error", tf.reduce_mean(td_errors))
+            tf.summary.scalar("train/td_error", tf.reduce_mean(td_errors))
         )
 
         # Compute huber loss of TD errors (clipping beyond [-1, 1])
@@ -196,7 +198,7 @@ class DQN:
 
         loss = tf.reduce_sum(errors)
         loss += tf.reduce_sum(tf.losses.get_regularization_losses())
-        self.summary.append(tf.contrib.summary.scalar("train/total_loss", loss))
+        self.summary.append(tf.summary.scalar("train/total_loss", loss))
 
         optimize_vars = []
         for scope in optimize_scope.split(","):

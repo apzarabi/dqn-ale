@@ -8,6 +8,7 @@ from atari_environment import AtariEnvironment
 from config import cfg
 from dqn import DQN
 from experience_replay import CircularBuffer, ExperienceReplay
+from utils import add_simple_summary
 
 
 def main(_):
@@ -18,21 +19,11 @@ def main(_):
 
     # Logging
     summary_writer = tf.contrib.summary.create_file_writer(cfg.log_dir)
-    summary_writer.set_as_default()
-
-    episode_ph = tf.placeholder(tf.int64, (), name="episode")
-    reward_ph = tf.placeholder(tf.float32, (), name="epeisode/reward")
-    step_ph = tf.placeholder(tf.int64, (), name="episode/steps")
-
-    with tf.contrib.summary.always_record_summaries():
-        episode_summary = [
-            tf.contrib.summary.scalar("episode/reward", reward_ph, step=episode_ph),
-            tf.contrib.summary.scalar("episode/step", step_ph, step=episode_ph),
-        ]
 
     if not tf.gfile.Exists(cfg.save_dir):
         tf.gfile.MakeDirs(cfg.save_dir)
 
+    # TODO handel this
     episode_results_path = os.path.join(cfg.save_dir, "episodeResults.csv")
     episode_results = tf.gfile.GFile(episode_results_path, "w")
     episode_results.write("episode,reward,steps\n")
@@ -41,11 +32,7 @@ def main(_):
     obs_shape = (84, 84, 1)
     input_height, input_width, _ = obs_shape
 
-    # Log DQN summaries every n steps
-    with tf.contrib.summary.record_summaries_every_n_global_steps(
-        cfg.log_summary_every
-    ):
-        dqn = DQN(input_height, input_width, AtariEnvironment.num_actions)
+    dqn = DQN(input_height, input_width, AtariEnvironment.num_actions)
 
     # Global step
     global_step = tf.train.get_or_create_global_step()
@@ -194,14 +181,9 @@ def main(_):
                 )
                 episode_results.flush()
                 # Log episode summaries to Tensorboard
-                sess.run(
-                    episode_summary,
-                    feed_dict={
-                        reward_ph: env.episode_reward,
-                        step_ph: env.episode_frames // cfg.frame_skip,
-                        episode_ph: env.episode_count,
-                    },
-                )
+                add_simple_summary(summary_writer, "episode/reward", env.episode_reward, env.episode_count)
+                add_simple_summary(summary_writer, "episode/frames", env.episode_frames, env.episode_count)
+
                 pbar.update(env.episode_frames if not cfg.evaluate else 1)
                 env.reset()
 
