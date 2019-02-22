@@ -1,4 +1,6 @@
 import tensorflow as tf
+import os
+
 
 flags = tf.app.flags
 
@@ -41,6 +43,7 @@ flags.DEFINE_float('rmsprop_epsilon', 0.01, 'rmsprop denominator epsilon')
 # Experiment params
 flags.DEFINE_integer('num_frames', 50000000, 'number of observed frames to run for')
 flags.DEFINE_integer('max_episode_count', -1, 'Max number of episodes to run for')
+flags.DEFINE_string('model_name', '', 'parent directory for logs and weights')
 flags.DEFINE_string('restore_dir', None, 'directory to restore weights from, takes the most recent checkpoint unless restore_file is specified')
 flags.DEFINE_string('restore_file', None, 'file to restore weights from, the file must be located in restore_dir')
 flags.DEFINE_string('save_dir', 'results', 'save directory')
@@ -49,6 +52,9 @@ flags.DEFINE_string('log_dir', 'logdir', 'log directory')
 flags.DEFINE_integer('log_summary_every', 32, 'How frequently to write summary (must be a multiple of learning_freq)')
 flags.DEFINE_boolean('disable_progress', False, 'Disable progress bar output')
 flags.DEFINE_boolean('log_summary', True, 'logs tensorboard summaries')
+
+# Game params
+flags.DEFINE_integer('num_actions', 3, 'number of actions in the game')
 
 # Freezing and Optimization
 flags.DEFINE_string('load_scope', 'q', 'Save and restore scope for tf.Saver')
@@ -64,3 +70,7 @@ flags.DEFINE_float('weight_decay_rate', 0.0001, 'Weight decay rate')
 
 tf.logging.set_verbosity(tf.logging.INFO)
 cfg = tf.app.flags.FLAGS
+
+assert len(cfg.model_name) > 0, "model_name should be provided"
+cfg.save_dir = os.path.join(cfg.model_name, "model/")
+cfg.log_dir = os.path.join(cfg.model_name, "logs/")
