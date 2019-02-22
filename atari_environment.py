@@ -6,7 +6,6 @@ from experience_replay import CircularBuffer
 
 
 class AtariEnvironment:
-    num_actions = 18  # Use full action set
 
     def __init__(self, frame_shape, frame_postprocess=lambda x: x):
         self.ale = ALEInterface()
@@ -21,8 +20,9 @@ class AtariEnvironment:
         self.ale.setMode(cfg.mode)
         self.ale.setDifficulty(cfg.difficulty)
 
-        self.action_set = self.ale.getLegalActionSet()
-        assert len(self.action_set) == AtariEnvironment.num_actions
+        # self.action_set = self.ale.getLegalActionSet()
+        self.action_set = self.ale.getMinimalActionSet()
+        assert len(self.action_set) == cfg.num_actions
 
         screen_dims = tuple(reversed(self.ale.getScreenDims())) + (1,)
         self._frame_buffer = CircularBuffer(

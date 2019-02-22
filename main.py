@@ -32,7 +32,7 @@ def main(_):
     obs_shape = (84, 84, 1)
     input_height, input_width, _ = obs_shape
 
-    dqn = DQN(input_height, input_width, AtariEnvironment.num_actions)
+    dqn = DQN(input_height, input_width, cfg.num_actions)
 
     # Global step
     global_step = tf.train.get_or_create_global_step()
@@ -91,7 +91,7 @@ def main(_):
         while seed_steps * cfg.frame_skip < cfg.seed_frames and (
             not sess.should_stop() and not cfg.evaluate
         ):
-            action = np.random.randint(AtariEnvironment.num_actions)
+            action = np.random.randint(cfg.num_actions)
             reward, next_state, terminal = env.act(action)
             seed_steps += 1
 
@@ -139,7 +139,7 @@ def main(_):
 
             # Epsilon greedy policy
             if np.random.uniform() < epsilon:
-                action = np.random.randint(0, AtariEnvironment.num_actions)
+                action = np.random.randint(0, cfg.num_actions)
             else:
                 action = sess.run(dqn.action, feed_dict={dqn.S: [env.state]})
 
