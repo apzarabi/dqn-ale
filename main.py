@@ -18,7 +18,7 @@ def main(_):
     tf.set_random_seed(cfg.random_seed)
 
     # Logging
-    summary_writer = tf.contrib.summary.create_file_writer(cfg.log_dir)
+    summary_writer = tf.summary.FileWriter(cfg.log_dir)
 
     if not tf.gfile.Exists(cfg.save_dir):
         tf.gfile.MakeDirs(cfg.save_dir)
@@ -61,7 +61,6 @@ def main(_):
 
     # Setup session
     def init_fn(scaffold, sess):
-        tf.contrib.summary.initialize(session=sess)
         if restoring:
             chkpt = (
                 tf.train.latest_checkpoint(cfg.restore_dir)
@@ -163,10 +162,15 @@ def main(_):
                         dqn.terminals,
                     ]
                     batch = replay_buffer.sample(cfg.batch_size)
-                    sess.run(
-                        [dqn.train, dqn.summary],
+                    train_op = [dqn.train]
+                    if steps % cfg.log_summary_every:
+                        train_op.append(dqn.summary)
+                    result = sess.run(
+                        train_op,
                         feed_dict=dict(zip(placeholders, batch)),
                     )
+                    if len(result) > 1:
+                        summary_writer.add_summary(result[-1], global_step=steps)
                 if steps % cfg.target_update_every == 0:
                     sess.run([dqn.copy_to_target])
                 if steps % cfg.model_chkpt_every == 0:
