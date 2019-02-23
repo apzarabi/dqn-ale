@@ -19,6 +19,8 @@ def main(_):
 
     # Logging
     summary_writer = tf.summary.FileWriter(cfg.log_dir)
+    print(cfg.log_dir)
+    exit(1)
 
     if not tf.gfile.Exists(cfg.save_dir):
         tf.gfile.MakeDirs(cfg.save_dir)
