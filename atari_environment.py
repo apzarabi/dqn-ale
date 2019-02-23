@@ -20,8 +20,8 @@ class AtariEnvironment:
         self.ale.setMode(cfg.mode)
         self.ale.setDifficulty(cfg.difficulty)
 
-        self.action_set = self.ale.getLegalActionSet()
-        # self.action_set = self.ale.getMinimalActionSet()
+        # self.action_set = self.ale.getLegalActionSet()
+        self.action_set = self.ale.getMinimalActionSet()
         assert len(self.action_set) == cfg.num_actions
 
         screen_dims = tuple(reversed(self.ale.getScreenDims())) + (1,)
