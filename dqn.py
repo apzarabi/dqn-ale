@@ -72,9 +72,10 @@ class DQN:
             if cfg.pad_first_conv_layer:
                 conv_input = tf.pad(conv_input, [[0, 0], [1, 1], [1, 1], [0, 0]])
 
-            initializer = tf.contrib.layers.variance_scaling_initializer(
-                mode="FAN_AVG", uniform=True
-            )
+            # initializer = tf.contrib.layers.variance_scaling_initializer(
+            #     mode="FAN_AVG", uniform=True
+            # )
+            initializer = tf.contrib.layers.xavier_initializer()
             regularizer = tf.contrib.layers.l2_regularizer(
                 scale=cfg.weight_decay_rate if cfg.use_l2 else 0.0
             )
