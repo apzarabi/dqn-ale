@@ -35,6 +35,10 @@ flags.DEFINE_boolean('pad_first_conv_layer', False, 'add padding to first conv l
 flags.DEFINE_string('q_scope', 'q', 'TensorFlow scoping for Q network')
 flags.DEFINE_string('q_target_scope', 'target', 'TensorFlow scoping for target Q network')
 
+# VQVAE Params
+flags.DEFINE_string('game_name', 'freeway', 'the name of the game')
+flags.DEFINE_boolean('debug_mode', False, 'In debug mode, the vqvae doesn\'t compute the distribution completely')
+
 # Optimizer params (RMSProp)
 flags.DEFINE_float('learning_rate', 0.00025, 'learning rate')
 flags.DEFINE_float('rmsprop_decay', 0.95, 'rmsprop gradient momentum')
@@ -51,9 +55,12 @@ flags.DEFINE_integer('log_summary_every', 32, 'How frequently to write summary (
 flags.DEFINE_boolean('disable_progress', False, 'Disable progress bar output')
 flags.DEFINE_boolean('log_summary', True, 'logs tensorboard summaries')
 
+flags.DEFINE_boolean('evaluation_mode', False, '')
+
 # Game params
 flags.DEFINE_integer('num_actions', 18, 'number of actions in the game')
 flags.DEFINE_integer('num_minimal_actions', 3, 'number of actions in the game')
+
 
 # Freezing and Optimization
 flags.DEFINE_string('load_scope', 'q', 'Save and restore scope for tf.Saver')
@@ -66,6 +73,10 @@ flags.DEFINE_boolean('use_l2', False, 'Use l2 regularization')
 flags.DEFINE_float('conv_dropout_rate', 0.05, 'Dropout rate for conv layers')
 flags.DEFINE_float('fc_dropout_rate', 0.1, 'Dropout rate for fully connected layers')
 flags.DEFINE_float('weight_decay_rate', 0.0001, 'Weight decay rate')
+
+
+flags.DEFINE_string("save_dir", "", "")
+flags.DEFINE_string("log_dir", "", "")
 
 tf.logging.set_verbosity(tf.logging.INFO)
 cfg = tf.app.flags.FLAGS

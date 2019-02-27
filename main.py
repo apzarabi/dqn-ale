@@ -9,6 +9,48 @@ from config import cfg
 from dqn import DQN
 from experience_replay import CircularBuffer, ExperienceReplay
 from utils import add_simple_summary
+from generative_model.multigraph_res2_vqvae_5frames import VQVAE
+
+
+def create_generative_models(sess):
+    ret = []
+    for i in range(cfg.num_minimal_actions):
+        scope = "gen_{}".format(i)
+        with tf.variable_scope(scope):
+            vae = VQVAE(data_directory="../../atari_ae/data/res-2-vq-vae/{}/".format(cfg.game_name),
+                        model_name="vq-vae-action-{}".format(i), graph=tf.get_default_graph())
+            iterator, iterable = vae.load_tfrecords(batch_size=vae.LOG_DATA_SIZE, repeat=False)
+            tf.logging.info("VAE MODEL PATH {}".format(vae.MODEL_PATH))
+            if tf.train.latest_checkpoint(vae.MODEL_PATH):
+                tf.logging.info("restoring network for action: {}".format(i))
+                vae.restore(iterable, scope=scope, sess=sess)
+                tf.logging.info("restored from {} step {}".format(tf.train.latest_checkpoint(vae.MODEL_PATH),
+                                                                  vae.global_step.eval(session=vae.sess)))
+            else:
+                raise RuntimeError("No checkpoints to restore from")
+            vae.compute_per_pixel_distribution(iterator, iterable, debug_mode=cfg.debug_mode)
+        ret.append(vae)
+    return ret
+
+
+def restore_or_initialize_weights(sess, dqn):
+    restore_dir_provided = False
+    if cfg.restore_dir is not None and cfg.restore_dir != "":
+        restore_dir = os.path.join(cfg.restore_dir, "model/")
+        restore_dir_provided = True
+    else:
+        restore_dir = cfg.save_dir
+    latest_ckpt = tf.train.latest_checkpoint(restore_dir)
+    tf.logging.info("restore_dir, latest_ckpt {} {}".format(restore_dir, latest_ckpt))
+
+    if latest_ckpt is None:
+        if cfg.evaluation_mode or restore_dir_provided:
+            raise RuntimeError("Latest Checkpoint shouldn't be none in evaluation mode or when restore_dir is provided")
+        tf.logging.info(" Initializing weights")
+        sess.run(tf.global_variables_initializer())
+    else:
+        tf.logging.info(" Restoring weights from checkpoint %s" % latest_ckpt)
+        dqn.saver.restore(sess, latest_ckpt)
 
 
 def main(_):
@@ -45,34 +87,16 @@ def main(_):
     saver = tf.train.Saver(var_list=vars_to_save)
 
     # Handle loading specific variables
-    restoring = cfg.restore_dir is not None
-    vars_to_load = []
-    if restoring:
-        for scope in cfg.load_scope.split(","):
-            vars_to_load.extend(
-                tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=scope)
-            )
-        loader = tf.train.Saver(var_list=vars_to_load)
+    sess_config = tf.ConfigProto()
+    sess_config.gpu_options.allow_growth = True
+    sess = tf.Session(config=sess_config)
 
-    tf.logging.info("Variables to save: ")
-    tf.logging.info(vars_to_save)
-    tf.logging.info("Variables to load: ")
-    tf.logging.info(vars_to_load)
-
-    # Setup session
-    def init_fn(scaffold, sess):
-        if restoring:
-            chkpt = (
-                tf.train.latest_checkpoint(cfg.restore_dir)
-                if cfg.restore_file is None
-                else os.path.join(cfg.restore_dir, cfg.restore_file)
-            )
-            tf.logging.info("Restoring weights from checkpoint %s" % chkpt)
-            loader.restore(sess, chkpt)
-
-    scaffold = tf.train.Scaffold(init_fn=init_fn)
-    sess = tf.train.SingularMonitoredSession(scaffold=scaffold)
+    restore_or_initialize_weights(sess, dqn)
     sess.run(dqn.copy_to_target)
+
+    # ##### Restoring AEs ########
+    vaes = create_generative_models(sess)
+    # ############################
 
     # Initialize ALE
     postprocess_frame = lambda frame: sess.run(
@@ -88,9 +112,7 @@ def main(_):
         total=cfg.seed_frames, disable=cfg.disable_progress or cfg.evaluate
     ) as pbar:
         seed_steps = 0
-        while seed_steps * cfg.frame_skip < cfg.seed_frames and (
-            not sess.should_stop() and not cfg.evaluate
-        ):
+        while seed_steps * cfg.frame_skip < cfg.seed_frames and not cfg.evaluate:
             action = np.random.randint(cfg.num_actions)
             reward, next_state, terminal = env.act(action)
             seed_steps += 1
@@ -126,7 +148,6 @@ def main(_):
                 and terminal
                 and env.episode_count >= cfg.max_episode_count
             )
-            and not sess.should_stop()
         ):
             # Epsilon greedy policy with epsilon annealing
             if not cfg.evaluate and steps * cfg.frame_skip < cfg.eps_anneal_over:
@@ -175,7 +196,7 @@ def main(_):
                     sess.run([dqn.copy_to_target])
                 if steps % cfg.model_chkpt_every == 0:
                     saver.save(
-                        sess.raw_session(), "%s/model_epoch_%04d" % (cfg.log_dir, steps)
+                        sess, "%s/model_epoch_%04d" % (cfg.log_dir, steps)
                     )
 
             if terminal:
