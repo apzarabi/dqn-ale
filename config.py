@@ -52,7 +52,8 @@ flags.DEFINE_boolean('disable_progress', False, 'Disable progress bar output')
 flags.DEFINE_boolean('log_summary', True, 'logs tensorboard summaries')
 
 # Game params
-flags.DEFINE_integer('num_actions', 3, 'number of actions in the game')
+flags.DEFINE_integer('num_actions', 18, 'number of actions in the game')
+flags.DEFINE_integer('num_minimal_actions', 3, 'number of actions in the game')
 
 # Freezing and Optimization
 flags.DEFINE_string('load_scope', 'q', 'Save and restore scope for tf.Saver')
