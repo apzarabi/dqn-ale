@@ -33,7 +33,7 @@ def create_generative_models(sess):
     return ret
 
 
-def restore_or_initialize_weights(sess, dqn):
+def restore_or_initialize_weights(sess, dqn, saver):
     restore_dir_provided = False
     if cfg.restore_dir is not None and cfg.restore_dir != "":
         restore_dir = os.path.join(cfg.restore_dir, "model/")
@@ -50,7 +50,7 @@ def restore_or_initialize_weights(sess, dqn):
         sess.run(tf.global_variables_initializer())
     else:
         tf.logging.info(" Restoring weights from checkpoint %s" % latest_ckpt)
-        dqn.saver.restore(sess, latest_ckpt)
+        saver.restore(sess, latest_ckpt)
 
 
 def main(_):
@@ -91,7 +91,7 @@ def main(_):
     sess_config.gpu_options.allow_growth = True
     sess = tf.Session(config=sess_config)
 
-    restore_or_initialize_weights(sess, dqn)
+    restore_or_initialize_weights(sess, dqn, saver)
     sess.run(dqn.copy_to_target)
 
     # ##### Restoring AEs ########
