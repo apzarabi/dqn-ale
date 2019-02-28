@@ -81,9 +81,11 @@ def main(_):
     increment_step = tf.assign_add(global_step, 1)
 
     # Save all variables
-    vars_to_save = tf.get_collection(
-        tf.GraphKeys.TRAINABLE_VARIABLES, scope=cfg.q_scope
-    )
+    vars_to_save = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="agent/q")
+    vars_to_save.append(global_step)
+    print("\n\n\n")
+    print([x.name for x in vars_to_save])
+    print("\n\n\n")
     saver = tf.train.Saver(var_list=vars_to_save)
 
     # Handle loading specific variables
@@ -95,7 +97,7 @@ def main(_):
     sess.run(dqn.copy_to_target)
 
     # ##### Restoring AEs ########
-    vaes = create_generative_models(sess)
+    # vaes = create_generative_models(sess)
     # ############################
 
     # Initialize ALE
@@ -196,7 +198,7 @@ def main(_):
                     sess.run([dqn.copy_to_target])
                 if steps % cfg.model_chkpt_every == 0:
                     saver.save(
-                        sess, "%s/model_epoch_%04d" % (cfg.log_dir, steps)
+                        sess, "%s/model_epoch_%04d" % (cfg.save_dir, steps)
                     )
 
             if terminal:

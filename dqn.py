@@ -36,9 +36,10 @@ class DQN:
             tf.uint8, shape=[None, None, 1], name="dqn/raw_image"
         )
 
-        optimize_scope = (
-            "%s/" % cfg.q_scope if cfg.optimize_scope is None else cfg.optimize_scope
-        )
+        # optimize_scope = (
+        #     "%s/" % cfg.q_scope if cfg.optimize_scope is None else cfg.optimize_scope
+        # )
+        optimize_scope = "agent/q"
 
         # Build TensorFlow operations
         self.Q = self.build_q_network(self.S, num_actions, cfg.q_scope)
@@ -129,6 +130,7 @@ class DQN:
                         training=(not cfg.evaluate),
                     )
                 actions = dense(fully_connected, units=num_actions, activation=None)
+            print(actions)
             return actions
 
     def build_action(self):

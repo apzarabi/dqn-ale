@@ -32,8 +32,8 @@ flags.DEFINE_integer('target_update_every', 40000, 'target network update freque
 flags.DEFINE_integer('seed_frames', 50000, 'frames to execute random policy to seed replay buffer')
 
 flags.DEFINE_boolean('pad_first_conv_layer', False, 'add padding to first conv layer as per DeepMind')
-flags.DEFINE_string('q_scope', 'q', 'TensorFlow scoping for Q network')
-flags.DEFINE_string('q_target_scope', 'target', 'TensorFlow scoping for target Q network')
+flags.DEFINE_string('q_scope', 'agent/q', 'TensorFlow scoping for Q network')
+flags.DEFINE_string('q_target_scope', 'agent/target', 'TensorFlow scoping for target Q network')
 
 # VQVAE Params
 flags.DEFINE_string('game_name', 'freeway', 'the name of the game')
@@ -74,9 +74,6 @@ flags.DEFINE_float('conv_dropout_rate', 0.05, 'Dropout rate for conv layers')
 flags.DEFINE_float('fc_dropout_rate', 0.1, 'Dropout rate for fully connected layers')
 flags.DEFINE_float('weight_decay_rate', 0.0001, 'Weight decay rate')
 
-
-flags.DEFINE_string("save_dir", "", "")
-flags.DEFINE_string("log_dir", "", "")
 
 tf.logging.set_verbosity(tf.logging.INFO)
 cfg = tf.app.flags.FLAGS
