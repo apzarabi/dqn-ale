@@ -210,7 +210,12 @@ class AbstractAutoEncoder:
         _ = saver.save(sess, self.MODEL_PATH, global_step=global_step)
 
     def restore(self, inp, scope=None, sess=None):
-        self._build_network(inp)
+        if scope:
+            self.scope = scope
+            with tf.variable_scope(scope):
+                self._build_network(inp)
+        else:
+            self._build_network(inp)
 
         if not sess:
             sess = tf.Session(config=self.sess_config)
@@ -224,7 +229,6 @@ class AbstractAutoEncoder:
             saver = tf.train.Saver(var_list=var_dict)
         else:
             saver = tf.train.Saver()
-
         _ = saver.restore(sess, tf.train.latest_checkpoint(self.MODEL_PATH))
 
         self.sess = sess

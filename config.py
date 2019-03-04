@@ -38,6 +38,7 @@ flags.DEFINE_string('q_target_scope', 'agent/target', 'TensorFlow scoping for ta
 # VQVAE Params
 flags.DEFINE_string('game_name', 'freeway', 'the name of the game')
 flags.DEFINE_boolean('debug_mode', False, 'In debug mode, the vqvae doesn\'t compute the distribution completely')
+flags.DEFINE_integer('model_freq', 10, '')
 
 # Optimizer params (RMSProp)
 flags.DEFINE_float('learning_rate', 0.00025, 'learning rate')

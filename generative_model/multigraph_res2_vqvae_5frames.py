@@ -370,7 +370,6 @@ class VQVAE(AbstractAutoEncoder):
         self.decoded_sampled *= 255.0
         print("\t\tComputing per pixel distribution took: {:>6.6}".format(time.time() - ping))
 
-
     # @profile
     def sample(self, num_samples, save_images=False, compute_summaries=False, debug_mode=False):
         """
