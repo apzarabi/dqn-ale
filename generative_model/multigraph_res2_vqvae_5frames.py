@@ -103,7 +103,6 @@ class VQVAE(AbstractAutoEncoder):
             assignments = tf.argmin(distances, 2)
             one_hot_assignments = tf.one_hot(assignments, depth=self.num_codes)
             one_hot_assignments = tf.stop_gradient(one_hot_assignments)
-            print("one hot shape", one_hot_assignments.shape)
             nearest_codebook_entries = tf.reduce_sum(
                 tf.expand_dims(one_hot_assignments, -1) *
                 tf.reshape(self.latent_space, [1, 1, self.num_codes, self.code_size]),
@@ -356,9 +355,9 @@ class VQVAE(AbstractAutoEncoder):
                                                                   unigrams=self.per_pixel_count[i].tolist(),
                                                                   num_true=self.num_codes, unique=False,
                                                                   range_max=self.num_codes)[0]))
-        print("idx inp shape", self.idx_inp.shape)
+        # print("idx inp shape", self.idx_inp.shape)
         one_hot = tf.one_hot(self.idx_inp, depth=self.num_codes)
-        print("idx one hot shape", one_hot.shape)
+        # print("idx one hot shape", one_hot.shape)
         self.latent_input_vals = tf.reduce_sum(
                     tf.expand_dims(one_hot, -1) *
                                 tf.reshape(self.latent_space, [1, 1, self.num_codes, self.code_size]),
@@ -368,6 +367,7 @@ class VQVAE(AbstractAutoEncoder):
         self.num_generated_samples = tf.placeholder(dtype=tf.int32)
         self.decoded_sampled = self.decoded_sampled[:self.num_generated_samples]
         self.decoded_sampled *= 255.0
+        self.decoded_sampled = tf.cast(self.decoded_sampled, tf.int8)
         print("\t\tComputing per pixel distribution took: {:>6.6}".format(time.time() - ping))
 
     # @profile

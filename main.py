@@ -130,13 +130,17 @@ def main(_):
     # Logging
     summary_writer = tf.summary.FileWriter(cfg.log_dir)
 
-    if not tf.gfile.Exists(cfg.save_dir):
+    if not cfg.evaluate and not tf.gfile.Exists(cfg.save_dir):
         tf.gfile.MakeDirs(cfg.save_dir)
+    else:
+        assert tf.gfile.Exists(cfg.save_dir)
 
     # TODO handel this
-    episode_results_path = os.path.join(cfg.save_dir, "episodeResults.csv")
+    episode_results_path = os.path.join(cfg.log_dir, "episodeResults.csv")
     episode_results = tf.gfile.GFile(episode_results_path, "w")
+    episode_results.write("model_freq={},save_dir={}".format(cfg.model_freq, cfg.save_dir))
     episode_results.write("episode,reward,steps\n")
+    episode_results.flush()
 
     # Setup ALE and DQN graph
     obs_shape = (84, 84, 1)
@@ -161,24 +165,30 @@ def main(_):
     restore_or_initialize_weights(sess, dqn, saver)
     sess.run(dqn.copy_to_target)
 
+    if cfg.evaluate:
+        # if in evaluation mode, saver is no longer needed
+        saver = None
+
     # ##### Restoring AEs ########
-    vaes = create_generative_models(sess)
-    image_summaries = []
-    image_summaries_ph = tf.placeholder(tf.float32, shape=(4, 84, 84, 4), name="image_summaries_placeholder")
-    for i in range(4):
-        for j in range(4):
-            image_summaries.append(
-                tf.summary.image("VAE_OUT_{}_{}".format(i, j),
-                                 tf.reshape(image_summaries_ph[i, :, :, j], (1, 84, 84, 1)))
-            )
+    if not cfg.evaluate:
+        vaes = create_generative_models(sess)
+        image_summaries = []
+        image_summaries_ph = tf.placeholder(tf.float32, shape=(4, 84, 84, 4), name="image_summaries_placeholder")
+        for i in range(4):
+            for j in range(4):
+                image_summaries.append(
+                    tf.summary.image("VAE_OUT_{}_{}".format(i, j),
+                                     tf.reshape(image_summaries_ph[i, :, :, j], (1, 84, 84, 1)))
+                )
     # ############################
 
-    summary_writer.add_graph(tf.get_default_graph())
-    summary_writer.add_graph(vaes[0].graph)
-    summary_writer.add_graph(vaes[1].graph)
-    summary_writer.add_graph(vaes[2].graph)
+    if not cfg.evaluate:
+        summary_writer.add_graph(tf.get_default_graph())
+        summary_writer.add_graph(vaes[0].graph)
+        summary_writer.add_graph(vaes[1].graph)
+        summary_writer.add_graph(vaes[2].graph)
 
-    summary_writer.flush()
+        summary_writer.flush()
 
     # Initialize ALE
     postprocess_frame = lambda frame: sess.run(
@@ -187,7 +197,8 @@ def main(_):
     env = AtariEnvironment(obs_shape, postprocess_frame)
 
     # Replay buffer
-    replay_buffer = ExperienceReplay(cfg.replay_buffer_size, obs_shape)
+    if not cfg.evaluate:
+        replay_buffer = ExperienceReplay(cfg.replay_buffer_size, obs_shape)
 
     # Perform random policy to get some training data
     with tqdm(

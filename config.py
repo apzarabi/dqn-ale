@@ -8,6 +8,7 @@ flags = tf.app.flags
 flags.DEFINE_integer('random_seed', 0, 'random seed')
 flags.DEFINE_boolean('evaluate', False, 'evaluating agent')
 
+
 # Environment specific
 flags.DEFINE_string('rom', '', 'Rom file')
 flags.DEFINE_float('sticky_prob', 0.25, 'sticky action probability')
@@ -75,10 +76,17 @@ flags.DEFINE_float('conv_dropout_rate', 0.05, 'Dropout rate for conv layers')
 flags.DEFINE_float('fc_dropout_rate', 0.1, 'Dropout rate for fully connected layers')
 flags.DEFINE_float('weight_decay_rate', 0.0001, 'Weight decay rate')
 
+# These two lines are needed for my local machine, but not for eureka
+# flags.DEFINE_string('save_dir', '', '')
+# flags.DEFINE_string('log_dir', '', '')
+
 
 tf.logging.set_verbosity(tf.logging.INFO)
 cfg = tf.app.flags.FLAGS
 
 assert len(cfg.model_name) > 0, "model_name should be provided"
 cfg.save_dir = os.path.join(cfg.model_name, "model/")
-cfg.log_dir = os.path.join(cfg.model_name, "logs/")
+if cfg.evaluate:
+    cfg.log_dir = os.path.join(cfg.model_name, "eval_M{}D{}".format(cfg.mode, cfg.difficulty))
+else:
+    cfg.log_dir = os.path.join(cfg.model_name, "logs/")
